@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login / Register</title>
+  <style>
+   body {
+      font-family: Arial, sans-serif;
+      background:#07e2da;
+      margin: 0;
+      padding: 0;
+    }
+    #login-btn {
+      background-color:red;
+      height:20px;
+      width:60px;
+      border-radius:10px;
+    }
+    #login-btn:hover {
+      background-color:blue;
+      height:25px;
+      width:65px;
+    }
+    #register-btn {
+      background-color:red;
+      height:20px;
+      width:60px;
+      border-radius:10px;
+    }
+    #register-btn:hover {
+      background-color:blue;
+      height:25px;
+      width:65px;
+    }
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      background-color: gold;
+      padding: 30px;
+      box-shadow: 0 0 5px #ccc;
+    } 
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome</h1>
+
+    <div class="form-container" id="login-form">
+      <h2>Login</h2>
+      <label for="UserName:">UserName:</label>
+      <input type="text" id="login-username" placeholder="Username" /><br><br>
+      <label for="Password">Password:</label>
+      <input type="password" id="login-password" placeholder="Password" /><br><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button id="login-btn">Login</button>
+      <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
+      <p id="login-error" class="error-msg"></p>
+    </div>
+
+    <div class="form-container" id="register-form" style="display:none;">
+      <h2>Register</h2>
+      <label for="register">UserName:</label>
+      <input type="text" id="register-username" placeholder="Username" /><br><br>
+      <label for="password">Password:</label>
+      <input type="password" id="register-password" placeholder="Password" /><br><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button id="register-btn">Register</button>
+      <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
+      <p id="register-error" class="error-msg"></p>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+
+    // Toggle forms
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    document.getElementById('show-register').addEventListener('click', e => {
+      e.preventDefault();
+      loginForm.style.display = 'none';
+      registerForm.style.display = 'block';
+      clearErrors();
+    });
+    document.getElementById('show-login').addEventListener('click', e => {
+      e.preventDefault();
+      registerForm.style.display = 'none';
+      loginForm.style.display = 'block';
+      clearErrors();
+    });
+
+    function clearErrors() {
+      document.getElementById('login-error').textContent = '';
+      document.getElementById('register-error').textContent = '';
+    }
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', async () => {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      if (!username || !password) {
+        document.getElementById('login-error').textContent = 'Please fill all fields.';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/users/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Login failed');
+        }
+        const user = await res.json();
+        localStorage.setItem('user', JSON.stringify(user));
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        document.getElementById('login-error').textContent = err.message;
+      }
+    });
+
+    // Register
+    document.getElementById('register-btn').addEventListener('click', async () => {
+      const username = document.getElementById('register-username').value.trim();
+      const password = document.getElementById('register-password').value;
+
+      if (!username || !password) {
+        document.getElementById('register-error').textContent = 'Please fill all fields.';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/users/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Registration failed');
+        }
+        const user = await res.json();
+        localStorage.setItem('user', JSON.stringify(user));
+        window.location.href = 'dashboard.html';
+      } catch (err) {
+        document.getElementById('register-error').textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

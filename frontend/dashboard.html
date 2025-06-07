@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <style>
+    .liked { color: red; }
+    .post { border: 1px solid #ccc; margin-bottom: 1rem; padding: 1rem; }
+    .post img { max-width: 100%; max-height: 300px; display: block; margin-top: 0.5rem; }
+    .comments-section { margin-top: 1rem; }
+    .comment { margin-bottom: 0.5rem; }
+    #logoutBtn {
+      background-color: deeppink;
+      border-radius: 10px;
+      height: 60px;
+      width: 100px;
+    }
+    #logoutBtn:hover {
+      background-color: red;
+      height: 70px;
+      width: 105px;
+    }
+    body {
+      background: #07e2da;
+      margin-left: 200px;
+      margin-right: 200px;
+      margin-top: 30px;
+    }
+    #post {
+      background-color: deeppink;
+      height: 30px;
+      width: 60px;
+      border-radius: 20px;
+    }
+    #post:hover {
+      background-color: blue;
+      height: 35px;
+      width: 65px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome, <span id="username"></span>!</h1>
+  <button id="logoutBtn">Logout</button>
+
+  <h2>Create Post</h2>
+  <form id="postForm" enctype="multipart/form-data">
+    <input type="text" id="caption" placeholder="Caption" required />
+    <input type="file" id="image" accept="image/*" />
+    <button type="submit" id="post">Post</button>
+  </form>
+
+  <h2>Posts</h2>
+  <div id="postsContainer"></div>
+
+  <script src="script.js"></script><br><br><br><br><br><br><br>
+  <footer>
+  &copy; 2025 Mini-Social-media. All rights reserved.
+</footer>
+</body>
+</html>
