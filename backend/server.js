@@ -8,22 +8,29 @@ const postRoutes = require('./routes/postRoutes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+/* ---------- Middleware ---------- */
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
 app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
-// Routes
+/* ---------- Routes ---------- */
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => console.error('MongoDB error:', err));
+/* ---------- MongoDB Atlas Connection ---------- */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB Atlas connected successfully');
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+  });
 
+/* ---------- Server ---------- */
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
