@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const Post = require('../models/Post');
-const User = require('../models/User');
 
 /* ---------- Multer Configuration ---------- */
 const storage = multer.diskStorage({
@@ -30,10 +29,11 @@ router.post('/create', upload.single('image'), async (req, res) => {
     });
 
     await post.save();
-    const populatedPost = await post.populate('user', 'username');
+
+    const populatedPost = await Post.findById(post._id)
+      .populate('user', 'username');
 
     res.status(201).json(populatedPost);
-
   } catch (err) {
     res.status(500).json({ message: 'Failed to create post' });
   }
@@ -48,7 +48,6 @@ router.get('/', async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json(posts);
-
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch posts' });
   }
@@ -61,9 +60,7 @@ router.post('/:postId/like', async (req, res) => {
 
   try {
     const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
+    if (!post) return res.status(404).json({ message: 'Post not found' });
 
     const index = post.likes.indexOf(userId);
     if (index === -1) {
@@ -73,39 +70,38 @@ router.post('/:postId/like', async (req, res) => {
     }
 
     await post.save();
-    const updatedPost = await post.populate('user', 'username');
+
+    const updatedPost = await Post.findById(postId)
+      .populate('user', 'username')
+      .populate('comments.user', 'username');
 
     res.json(updatedPost);
-
   } catch (err) {
     res.status(500).json({ message: 'Failed to like post' });
   }
 });
 
-/* ---------- Add Comment ---------- */
+/* ---------- Add Comment (FIXED) ---------- */
 router.post('/:postId/comment', async (req, res) => {
   const { postId } = req.params;
   const { userId, text } = req.body;
 
   try {
-    const user = await User.findById(userId);
     const post = await Post.findById(postId);
-
-    if (!user || !post) {
-      return res.status(404).json({ message: 'Post or user not found' });
-    }
+    if (!post) return res.status(404).json({ message: 'Post not found' });
 
     post.comments.push({
       user: userId,
-      username: user.username,
       text
     });
 
     await post.save();
-    const updatedPost = await post.populate('user', 'username');
+
+    const updatedPost = await Post.findById(postId)
+      .populate('user', 'username')
+      .populate('comments.user', 'username');
 
     res.json(updatedPost);
-
   } catch (err) {
     res.status(500).json({ message: 'Failed to add comment' });
   }
