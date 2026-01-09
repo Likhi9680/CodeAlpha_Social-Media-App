@@ -72,7 +72,7 @@ async function loadPosts() {
         </div>
         <div class="comments-section" id="comments-${post._id}" style="display:none;">
           ${post.comments.map(c => `
-            <div class="comment"><strong>${c.username}:</strong> ${c.text}</div>
+            <div class="comment"><strong>${c.user.username}:</strong> ${c.text}</div>
           `).join('')}
           <input type="text" class="comment-input" placeholder="Write a comment..." data-id="${post._id}" />
         </div>
