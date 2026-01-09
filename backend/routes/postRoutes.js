@@ -4,13 +4,14 @@ const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 const Post = require('../models/Post');
+const User = require('../models/User');
 
 /* ---------- Cloudinary Storage ---------- */
 const storage = new CloudinaryStorage({
-  cloudinary,
+  cloudinary: cloudinary,
   params: {
-    folder: 'social_media_posts',
-    allowed_formats: ['jpg', 'jpeg', 'png']
+    folder: 'social-media-posts',
+    allowed_formats: ['jpg', 'png', 'jpeg']
   }
 });
 
@@ -21,21 +22,18 @@ router.post('/create', upload.single('image'), async (req, res) => {
   try {
     const { caption, userId } = req.body;
 
-    const imageUrl = req.file ? req.file.path : '';
-
     const post = new Post({
+      user: userId,
       caption,
-      imageUrl,
-      user: userId
+      imageUrl: req.file ? req.file.path : ''
     });
 
     await post.save();
-
-    const populatedPost = await Post.findById(post._id)
-      .populate('user', 'username');
+    const populatedPost = await post.populate('user', 'username');
 
     res.status(201).json(populatedPost);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Failed to create post' });
   }
 });
@@ -59,24 +57,14 @@ router.post('/:postId/like', async (req, res) => {
   const { postId } = req.params;
   const { userId } = req.body;
 
-  try {
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+  const post = await Post.findById(postId);
+  if (!post) return res.status(404).json({ message: 'Post not found' });
 
-    const index = post.likes.indexOf(userId);
-    if (index === -1) post.likes.push(userId);
-    else post.likes.splice(index, 1);
+  const index = post.likes.indexOf(userId);
+  index === -1 ? post.likes.push(userId) : post.likes.splice(index, 1);
 
-    await post.save();
-
-    const updatedPost = await Post.findById(postId)
-      .populate('user', 'username')
-      .populate('comments.user', 'username');
-
-    res.json(updatedPost);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to like post' });
-  }
+  await post.save();
+  res.json(post);
 });
 
 /* ---------- Add Comment ---------- */
@@ -84,25 +72,17 @@ router.post('/:postId/comment', async (req, res) => {
   const { postId } = req.params;
   const { userId, text } = req.body;
 
-  try {
-    const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: 'Post not found' });
+  const user = await User.findById(userId);
+  const post = await Post.findById(postId);
 
-    post.comments.push({
-      user: userId,
-      text
-    });
-
-    await post.save();
-
-    const updatedPost = await Post.findById(postId)
-      .populate('user', 'username')
-      .populate('comments.user', 'username');
-
-    res.json(updatedPost);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to add comment' });
+  if (!user || !post) {
+    return res.status(404).json({ message: 'Post or user not found' });
   }
+
+  post.comments.push({ user: userId, text });
+  await post.save();
+
+  res.json(post);
 });
 
 module.exports = router;
