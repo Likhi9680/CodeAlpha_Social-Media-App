@@ -1,5 +1,6 @@
 // 🔥 CHANGE THIS AFTER BACKEND DEPLOY
-const API_BASE = 'https://social-media.onrender.com/api';
+const API_BASE = 'https://social-media-app-rtxu.onrender.com/api';
+
 // (use localhost ONLY for local testing)
 // const API_BASE = 'http://localhost:5000/api';
 
