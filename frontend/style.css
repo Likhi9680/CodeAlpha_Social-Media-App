@@ -274,7 +274,6 @@ body.dark .post-header {
 
   .topbar {
     padding: 12px 15px;
-    flex-direction: row;
   }
 
   .user-info {
@@ -299,18 +298,10 @@ body.dark .post-header {
     padding: 12px;
   }
 
-  .post-box input,
-  .comment-input {
-    font-size: 14px;
-  }
-
-  /* 🔥 Full image on mobile */
   .post img {
     width: 100%;
-    height: auto;          /* Let image keep original height */
-    max-height: none;
-    object-fit: contain;  /* No cropping */
-    border-radius: 10px;
+    height: auto;          /* FULL IMAGE */
+    object-fit: contain;  /* No crop */
   }
 
   .post-actions {
@@ -331,28 +322,24 @@ body.dark .post-header {
     max-width: 90%;
   }
 
-  .auth-card {
-    width: 420px;
-  }
-
   .post img {
-    height: auto;
-    max-height: 300px;
-    object-fit: contain;
+    width: 100%;
+    height: auto;         /* FULL IMAGE */
+    object-fit: contain; /* No crop */
   }
 }
 
-/* Large screens */
-@media (min-width: 1200px) {
+/* Laptops & Large screens */
+@media (min-width: 1025px) {
 
   .container {
     max-width: 700px;
   }
 
   .post img {
-    height: 350px;
-    object-fit: cover;
+    width: 100%;
+    height: auto;         /* FULL IMAGE */
+    object-fit: contain; /* No crop */
+    max-height: 600px;   /* Prevent too tall images */
   }
 }
- 
-  
