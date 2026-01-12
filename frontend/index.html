@@ -1,154 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login / Register</title>
-  <style>
-   body {
-      font-family: Arial, sans-serif;
-      background:#07e2da;
-      margin: 0;
-      padding: 0;
-    }
-    #login-btn {
-      background-color:red;
-      height:20px;
-      width:60px;
-      border-radius:10px;
-    }
-    #login-btn:hover {
-      background-color:blue;
-      height:25px;
-      width:65px;
-    }
-    #register-btn {
-      background-color:red;
-      height:20px;
-      width:60px;
-      border-radius:10px;
-    }
-    #register-btn:hover {
-      background-color:blue;
-      height:25px;
-      width:65px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 20px auto;
-      background-color: gold;
-      padding: 30px;
-      box-shadow: 0 0 5px #ccc;
-    } 
-  </style>
+<meta charset="UTF-8">
+<title>InstaMedia - Login</title>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="container">
-    <h1>Welcome</h1>
+<body class="auth-page">
 
-    <div class="form-container" id="login-form">
-      <h2>Login</h2>
-      <label for="UserName:">UserName:</label>
-      <input type="text" id="login-username" placeholder="Username" /><br><br>
-      <label for="Password">Password:</label>
-      <input type="password" id="login-password" placeholder="Password" /><br><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button id="login-btn">Login</button>
-      <p>Don't have an account? <a href="#" id="show-register">Register here</a></p>
-      <p id="login-error" class="error-msg"></p>
-    </div>
+<div class="auth-card">
 
-    <div class="form-container" id="register-form" style="display:none;">
-      <h2>Register</h2>
-      <label for="register">UserName:</label>
-      <input type="text" id="register-username" placeholder="Username" /><br><br>
-      <label for="password">Password:</label>
-      <input type="password" id="register-password" placeholder="Password" /><br><br>
-      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<button id="register-btn">Register</button>
-      <p>Already have an account? <a href="#" id="show-login">Login here</a></p>
-      <p id="register-error" class="error-msg"></p>
-    </div>
+  <div class="auth-header">
+    <h1>InstaMediaApp</h1>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
   </div>
 
-  <script>
-    const API_BASE = 'https://social-media-app-rtxu.onrender.com/api';
+  <!-- Login -->
+  <div id="login-form">
+    <input id="login-username" placeholder="Username">
+    <input id="login-password" type="password" placeholder="Password">
+    <button id="login-btn">Login</button>
+    <p>New user? <a id="show-register">Create account</a></p>
+    <span id="login-error" class="error-text"></span>
+  </div>
+
+  <!-- Register -->
+  <div id="register-form" style="display:none;">
+    <input id="register-username" placeholder="Username">
+    <input id="register-password" type="password" placeholder="Password">
+    <button id="register-btn">Register</button>
+    <p>Already have account? <a id="show-login">Login</a></p>
+    <span id="register-error" class="error-text"></span>
+  </div>
+
+</div>
 
 
-    // Toggle forms
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
-    document.getElementById('show-register').addEventListener('click', e => {
-      e.preventDefault();
-      loginForm.style.display = 'none';
-      registerForm.style.display = 'block';
-      clearErrors();
-    });
-    document.getElementById('show-login').addEventListener('click', e => {
-      e.preventDefault();
-      registerForm.style.display = 'none';
-      loginForm.style.display = 'block';
-      clearErrors();
-    });
+<script>
+const API_BASE = 'https://social-media-app-rtxu.onrender.com/api';
 
-    function clearErrors() {
-      document.getElementById('login-error').textContent = '';
-      document.getElementById('register-error').textContent = '';
-    }
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
 
-    // Login
-    document.getElementById('login-btn').addEventListener('click', async () => {
-      const username = document.getElementById('login-username').value.trim();
-      const password = document.getElementById('login-password').value;
+// Toggle forms
+document.getElementById("show-register").onclick = () => {
+  loginForm.style.display = "none";
+  registerForm.style.display = "block";
+};
+document.getElementById("show-login").onclick = () => {
+  registerForm.style.display = "none";
+  loginForm.style.display = "block";
+};
 
-      if (!username || !password) {
-        document.getElementById('login-error').textContent = 'Please fill all fields.';
-        return;
-      }
+// Theme
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+if (!localStorage.getItem("theme")) {
+  document.body.classList.toggle("dark", prefersDark);
+  localStorage.setItem("theme", prefersDark ? "dark" : "light");
+} else {
+  document.body.classList.toggle("dark", localStorage.getItem("theme") === "dark");
+}
 
-      try {
-        const res = await fetch(`${API_BASE}/users/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || 'Login failed');
-        }
-        const user = await res.json();
-        localStorage.setItem('user', JSON.stringify(user));
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        document.getElementById('login-error').textContent = err.message;
-      }
-    });
+const toggleBtn = document.getElementById("themeToggle");
+toggleBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
 
-    // Register
-    document.getElementById('register-btn').addEventListener('click', async () => {
-      const username = document.getElementById('register-username').value.trim();
-      const password = document.getElementById('register-password').value;
+toggleBtn.onclick = () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+  toggleBtn.textContent = isDark ? "☀️" : "🌙";
+};
 
-      if (!username || !password) {
-        document.getElementById('register-error').textContent = 'Please fill all fields.';
-        return;
-      }
+// Login
+document.getElementById("login-btn").onclick = async () => {
+  const username = loginForm.querySelector("#login-username").value;
+  const password = loginForm.querySelector("#login-password").value;
 
-      try {
-        const res = await fetch(`${API_BASE}/users/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
-        });
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.message || 'Registration failed');
-        }
-        const user = await res.json();
-        localStorage.setItem('user', JSON.stringify(user));
-        window.location.href = 'dashboard.html';
-      } catch (err) {
-        document.getElementById('register-error').textContent = err.message;
-      }
-    });
-  </script>
+  const res = await fetch(`${API_BASE}/users/login`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({username, password})
+  });
+
+  const data = await res.json();
+  if (!res.ok) return document.getElementById("login-error").innerText = data.message;
+
+  localStorage.setItem("user", JSON.stringify(data));
+  window.location = "dashboard.html";
+};
+
+// Register
+document.getElementById("register-btn").onclick = async () => {
+  const username = registerForm.querySelector("#register-username").value;
+  const password = registerForm.querySelector("#register-password").value;
+
+  const res = await fetch(`${API_BASE}/users/register`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({username, password})
+  });
+
+  const data = await res.json();
+  if (!res.ok) return document.getElementById("register-error").innerText = data.message;
+
+  localStorage.setItem("user", JSON.stringify(data));
+  window.location = "dashboard.html";
+};
+</script>
+
 </body>
 </html>
