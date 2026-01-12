@@ -1,22 +1,17 @@
 // 🔥 CHANGE THIS AFTER BACKEND DEPLOY
 const API_BASE = 'https://social-media-app-rtxu.onrender.com/api';
-// const API_BASE = 'http://localhost:5000/api'; // for local testing
+// const API_BASE = 'http://localhost:5000/api';
 
 const usernameSpan = document.getElementById('username');
 const logoutBtn = document.getElementById('logoutBtn');
 const postForm = document.getElementById('postForm');
 const postsContainer = document.getElementById('postsContainer');
+const captionInput = document.getElementById('caption');
+const imageInput = document.getElementById('image');
 
 /* ---------- Utility ---------- */
 function formatDateTime(dateString) {
-  const options = { 
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  };
-  return new Date(dateString).toLocaleString(undefined, options);
+  return new Date(dateString).toLocaleString();
 }
 
 /* ---------- Auth ---------- */
@@ -31,70 +26,55 @@ function getCurrentUserId() {
 
 function checkLogin() {
   const user = getCurrentUser();
-  if (!user) {
-    window.location.href = 'index.html';
-  } else {
-    usernameSpan.textContent = user.username;
-  }
+  if (!user) window.location.href = 'index.html';
+  usernameSpan.textContent = user.username;
 }
 
-logoutBtn.addEventListener('click', () => {
+logoutBtn.onclick = () => {
   localStorage.removeItem('user');
   window.location.href = 'index.html';
-});
+};
 
 /* ---------- Load Posts ---------- */
 async function loadPosts() {
-  postsContainer.innerHTML = 'Loading posts...';
+  const res = await fetch(`${API_BASE}/posts`);
+  const posts = await res.json();
+  const currentUserId = getCurrentUserId();
 
-  try {
-    const res = await fetch(`${API_BASE}/posts`);
-    const posts = await res.json();
-    const currentUserId = getCurrentUserId();
+  postsContainer.innerHTML = '';
 
-    postsContainer.innerHTML = '';
+  posts.forEach(post => {
+    const liked = post.likes.includes(currentUserId);
+    const isOwner = post.user._id === currentUserId;
 
-    posts.forEach(post => {
-      const isOwner = post.user._id === currentUserId;
-      const liked = post.likes.includes(currentUserId);
+    const div = document.createElement('div');
+    div.className = 'post';
+    div.id = post._id;
 
-      const postEl = document.createElement('div');
-      postEl.className = 'post';
-      postEl.id = post._id;
+    div.innerHTML = `
+      <div class="post-header">
+        <strong>${post.user.username}</strong> • ${formatDateTime(post.createdAt)}
+        ${isOwner ? `<button class="delete-btn" data-id="${post._id}">🗑</button>` : ''}
+      </div>
 
-      postEl.innerHTML = `
-        <div class="post-header">
-          <span><strong>${post.user.username}</strong> • ${formatDateTime(post.createdAt)}</span>
-          ${isOwner ? `<button class="delete-btn" data-id="${post._id}">🗑</button>` : ''}
-        </div>
+      <div class="post-caption">${post.caption}</div>
+      ${post.imageUrl ? `<img src="${post.imageUrl}">` : ''}
 
-        <div class="post-caption">${post.caption}</div>
+      <div class="post-actions">
+        <button class="like-btn ${liked ? 'liked' : ''}" data-id="${post._id}">
+          ❤️ <span class="like-count">${post.likes.length}</span>
+        </button>
+        <button class="comment-btn" data-id="${post._id}">💬 ${post.comments.length}</button>
+      </div>
 
-        ${post.imageUrl ? `<img src="${post.imageUrl}" />` : ''}
+      <div class="comments" id="comments-${post._id}" style="display:none">
+        ${post.comments.map(c => `<p><b>${c.user.username}</b>: ${c.text}</p>`).join('')}
+        <input class="comment-input" data-id="${post._id}" placeholder="Write a comment...">
+      </div>
+    `;
 
-        <div class="post-actions">
-          <button class="like-btn ${liked ? 'liked' : ''}" data-id="${post._id}">
-            ❤️ <span class="like-count">${post.likes.length}</span>
-          </button>
-          <button class="comment-btn" data-id="${post._id}">
-            💬 ${post.comments.length}
-          </button>
-        </div>
-
-        <div class="comments-section" id="comments-${post._id}" style="display:none;">
-          ${post.comments.map(c => `
-            <div class="comment"><strong>${c.user.username}</strong>: ${c.text}</div>
-          `).join('')}
-          <input class="comment-input" data-id="${post._id}" placeholder="Write comment...">
-        </div>
-      `;
-
-      postsContainer.appendChild(postEl);
-    });
-
-  } catch (err) {
-    postsContainer.innerHTML = 'Failed to load posts';
-  }
+    postsContainer.appendChild(div);
+  });
 }
 
 /* ---------- Create Post ---------- */
@@ -102,12 +82,11 @@ postForm.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const caption = captionInput.value.trim();
-  const imageFile = image.files[0];
-  const userId = getCurrentUserId();
+  const imageFile = imageInput.files[0];
 
   const formData = new FormData();
   formData.append('caption', caption);
-  formData.append('userId', userId);
+  formData.append('userId', getCurrentUserId());
   if (imageFile) formData.append('image', imageFile);
 
   await fetch(`${API_BASE}/posts/create`, {
@@ -122,13 +101,12 @@ postForm.addEventListener('submit', async (e) => {
 /* ---------- Like / Comment / Delete ---------- */
 postsContainer.addEventListener('click', async (e) => {
 
-  // LIKE
   if (e.target.classList.contains('like-btn')) {
     const postId = e.target.dataset.id;
 
     const res = await fetch(`${API_BASE}/posts/${postId}/like`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ userId: getCurrentUserId() })
     });
 
@@ -137,21 +115,19 @@ postsContainer.addEventListener('click', async (e) => {
     e.target.classList.toggle('liked', updated.likes.includes(getCurrentUserId()));
   }
 
-  // COMMENT TOGGLE
   if (e.target.classList.contains('comment-btn')) {
-    const postId = e.target.dataset.id;
-    const box = document.getElementById(`comments-${postId}`);
+    const box = document.getElementById(`comments-${e.target.dataset.id}`);
     box.style.display = box.style.display === 'none' ? 'block' : 'none';
   }
 
-  // DELETE (ONLY OWNER SEES BUTTON)
   if (e.target.classList.contains('delete-btn')) {
     const postId = e.target.dataset.id;
-
-    if (confirm('Delete this post permanently?')) {
-      await fetch(`${API_BASE}/posts/${postId}`, { method: 'DELETE' });
-      document.getElementById(postId).remove();
-    }
+    await fetch(`${API_BASE}/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ userId: getCurrentUserId() })
+    });
+    document.getElementById(postId).remove();
   }
 });
 
@@ -159,12 +135,14 @@ postsContainer.addEventListener('click', async (e) => {
 postsContainer.addEventListener('keydown', async (e) => {
   if (e.target.classList.contains('comment-input') && e.key === 'Enter') {
     const postId = e.target.dataset.id;
-    const text = e.target.value;
 
     await fetch(`${API_BASE}/posts/${postId}/comment`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: getCurrentUserId(), text })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        userId: getCurrentUserId(),
+        text: e.target.value
+      })
     });
 
     loadPosts();
