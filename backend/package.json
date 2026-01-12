@@ -8,6 +8,7 @@
     "express": "^5.2.1",
     "mongoose": "^8.15.1",
     "multer": "^2.0.2",
-    "multer-storage-cloudinary": "^4.0.0"
+    "multer-storage-cloudinary": "^4.0.0",
+     "streamifier": "^0.1.1"
   }
 }
