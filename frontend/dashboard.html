@@ -1,61 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Dashboard</title>
-  <style>
-    .liked { color: red; }
-    .post { border: 1px solid #ccc; margin-bottom: 1rem; padding: 1rem; }
-    .post img { max-width: 100%; max-height: 300px; display: block; margin-top: 0.5rem; }
-    .comments-section { margin-top: 1rem; }
-    .comment { margin-bottom: 0.5rem; }
-    #logoutBtn {
-      background-color: deeppink;
-      border-radius: 10px;
-      height: 60px;
-      width: 100px;
-    }
-    #logoutBtn:hover {
-      background-color: red;
-      height: 70px;
-      width: 105px;
-    }
-    body {
-      background: #07e2da;
-      margin-left: 200px;
-      margin-right: 200px;
-      margin-top: 30px;
-    }
-    #post {
-      background-color: deeppink;
-      height: 30px;
-      width: 60px;
-      border-radius: 20px;
-    }
-    #post:hover {
-      background-color: blue;
-      height: 35px;
-      width: 65px;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Mini Social Media</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Welcome, <span id="username"></span>!</h1>
-  <button id="logoutBtn">Logout</button>
 
-  <h2>Create Post</h2>
-  <form id="postForm" enctype="multipart/form-data">
-    <input type="text" id="caption" placeholder="Caption" required />
-    <input type="file" id="image" accept="image/*" />
-    <button type="submit" id="post">Post</button>
+<header>
+  <div class="topbar">
+    <div class="user-info">
+      <span id="username"></span>
+    </div>
+
+    <div class="actions">
+      <button id="themeToggle" class="theme-toggle">🌙</button>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <form id="postForm" class="post-box" enctype="multipart/form-data">
+    <input type="text" id="caption" placeholder="What's on your mind?" required>
+    <input type="file" id="image" accept="image/*">
+    <button type="submit">Post</button>
   </form>
 
-  <h2>Posts</h2>
-  <div id="postsContainer"></div>
+  <div id="postsContainer" class="feed"></div>
+</main>
 
-  <script src="script.js"></script><br><br><br><br><br><br><br>
-  <footer>
-  &copy; 2025 Mini-Social-media. All rights reserved.
-</footer>
+<script src="script.js"></script>
+
+<script>
+/* ---------- Theme Sync ---------- */
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const savedTheme = localStorage.getItem("theme");
+
+if (!savedTheme) {
+  document.body.classList.toggle("dark", prefersDark);
+  localStorage.setItem("theme", prefersDark ? "dark" : "light");
+} else {
+  document.body.classList.toggle("dark", savedTheme === "dark");
+}
+
+const toggleBtn = document.getElementById("themeToggle");
+toggleBtn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
+
+toggleBtn.addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  const isDark = document.body.classList.contains("dark");
+  localStorage.setItem("theme", isDark ? "dark" : "light");
+  toggleBtn.textContent = isDark ? "☀️" : "🌙";
+});
+</script>
+
 </body>
 </html>
