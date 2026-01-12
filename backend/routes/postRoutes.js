@@ -1,22 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const cloudinary = require('../config/cloudinary');
 const Post = require('../models/Post');
 
+const upload = multer(); // memory storage
 
-const upload = multer();
-
-/* ---------- Create Post ---------- */
 router.post('/create', upload.single('image'), async (req, res) => {
   try {
     const { caption, userId } = req.body;
-
     let imageUrl = "";
 
     if (req.file) {
-      const streamUpload = () => {
+      const uploadFromBuffer = () => {
         return new Promise((resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
             { folder: "instamedia" },
@@ -29,7 +26,7 @@ router.post('/create', upload.single('image'), async (req, res) => {
         });
       };
 
-      const result = await streamUpload();
+      const result = await uploadFromBuffer();
       imageUrl = result.secure_url;
     }
 
@@ -38,12 +35,13 @@ router.post('/create', upload.single('image'), async (req, res) => {
 
     const populatedPost = await Post.findById(post._id).populate('user', 'username');
     res.status(201).json(populatedPost);
+
   } catch (err) {
-    res.status(500).json({ message: 'Failed to create post' });
+    console.error(err);
+    res.status(500).json({ message: 'Image upload failed' });
   }
 });
 
-/* ---------- Other routes unchanged ---------- */
 router.get('/', async (req, res) => {
   const posts = await Post.find()
     .populate('user', 'username')
@@ -74,6 +72,7 @@ router.post('/:postId/comment', async (req, res) => {
 router.delete('/:postId', async (req, res) => {
   const { userId } = req.body;
   const post = await Post.findById(req.params.postId);
+
   if (!post) return res.status(404).json({ message: 'Post not found' });
   if (post.user.toString() !== userId) return res.status(403).json({ message: 'Not allowed' });
 
