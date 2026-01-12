@@ -1,12 +1,17 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
-const cloudinary = require('../config/cloudinary');
 const Post = require('../models/Post');
 
-const upload = multer(); // memory storage
+// Load cloudinary config
+require('../config/cloudinary');
 
+// Multer memory storage
+const upload = multer({ storage: multer.memoryStorage() });
+
+/* ---------- Create Post ---------- */
 router.post('/create', upload.single('image'), async (req, res) => {
   try {
     const { caption, userId } = req.body;
@@ -38,10 +43,11 @@ router.post('/create', upload.single('image'), async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Image upload failed' });
+    res.status(500).json({ message: 'Failed to create post' });
   }
 });
 
+/* ---------- Get Posts ---------- */
 router.get('/', async (req, res) => {
   const posts = await Post.find()
     .populate('user', 'username')
@@ -50,31 +56,31 @@ router.get('/', async (req, res) => {
   res.json(posts);
 });
 
+/* ---------- Like ---------- */
 router.post('/:postId/like', async (req, res) => {
   const post = await Post.findById(req.params.postId);
   const index = post.likes.indexOf(req.body.userId);
   index === -1 ? post.likes.push(req.body.userId) : post.likes.splice(index, 1);
   await post.save();
-  const updated = await Post.findById(post._id).populate('user', 'username');
-  res.json(updated);
+  res.json(post);
 });
 
+/* ---------- Comment ---------- */
 router.post('/:postId/comment', async (req, res) => {
   const post = await Post.findById(req.params.postId);
   post.comments.push({ user: req.body.userId, text: req.body.text });
   await post.save();
-  const updated = await Post.findById(post._id)
-    .populate('user', 'username')
-    .populate('comments.user', 'username');
-  res.json(updated);
+  res.json(post);
 });
 
+/* ---------- Delete (Owner Only) ---------- */
 router.delete('/:postId', async (req, res) => {
   const { userId } = req.body;
   const post = await Post.findById(req.params.postId);
 
   if (!post) return res.status(404).json({ message: 'Post not found' });
-  if (post.user.toString() !== userId) return res.status(403).json({ message: 'Not allowed' });
+  if (post.user.toString() !== userId)
+    return res.status(403).json({ message: 'Not allowed' });
 
   await Post.findByIdAndDelete(req.params.postId);
   res.json({ message: 'Post deleted' });
