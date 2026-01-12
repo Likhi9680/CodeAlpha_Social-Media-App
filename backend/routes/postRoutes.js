@@ -1,17 +1,23 @@
 const express = require('express');
 const router = express.Router();
+const { v2: cloudinary } = require('cloudinary');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
 const Post = require('../models/Post');
-const User = require('../models/User');
 
-/* ---------- Cloudinary Storage ---------- */
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Multer Cloudinary storage
 const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
+  cloudinary,
   params: {
-    folder: 'social-media-posts',
-    allowed_formats: ['jpg', 'png', 'jpeg']
+    folder: 'social_posts',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp']
   }
 });
 
@@ -23,66 +29,71 @@ router.post('/create', upload.single('image'), async (req, res) => {
     const { caption, userId } = req.body;
 
     const post = new Post({
-      user: userId,
       caption,
-      imageUrl: req.file ? req.file.path : ''
+      imageUrl: req.file ? req.file.path : '',
+      imagePublicId: req.file ? req.file.filename : '',
+      user: userId
     });
 
     await post.save();
-    const populatedPost = await post.populate('user', 'username');
-
-    res.status(201).json(populatedPost);
+    const populated = await Post.findById(post._id).populate('user', 'username');
+    res.status(201).json(populated);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to create post' });
+    res.status(500).json({ message: 'Post upload failed' });
   }
 });
 
 /* ---------- Get All Posts ---------- */
 router.get('/', async (req, res) => {
-  try {
-    const posts = await Post.find()
-      .populate('user', 'username')
-      .populate('comments.user', 'username')
-      .sort({ createdAt: -1 });
-
-    res.json(posts);
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch posts' });
-  }
+  const posts = await Post.find()
+    .populate('user', 'username')
+    .populate('comments.user', 'username')
+    .sort({ createdAt: -1 });
+  res.json(posts);
 });
 
-/* ---------- Like / Unlike ---------- */
+/* ---------- Like ---------- */
 router.post('/:postId/like', async (req, res) => {
-  const { postId } = req.params;
-  const { userId } = req.body;
-
-  const post = await Post.findById(postId);
-  if (!post) return res.status(404).json({ message: 'Post not found' });
-
-  const index = post.likes.indexOf(userId);
-  index === -1 ? post.likes.push(userId) : post.likes.splice(index, 1);
-
+  const post = await Post.findById(req.params.postId);
+  const index = post.likes.indexOf(req.body.userId);
+  index === -1 ? post.likes.push(req.body.userId) : post.likes.splice(index, 1);
   await post.save();
-  res.json(post);
+  const updated = await Post.findById(post._id).populate('user', 'username');
+  res.json(updated);
 });
 
-/* ---------- Add Comment ---------- */
+/* ---------- Comment ---------- */
 router.post('/:postId/comment', async (req, res) => {
-  const { postId } = req.params;
-  const { userId, text } = req.body;
-
-  const user = await User.findById(userId);
-  const post = await Post.findById(postId);
-
-  if (!user || !post) {
-    return res.status(404).json({ message: 'Post or user not found' });
-  }
-
-  post.comments.push({ user: userId, text });
+  const post = await Post.findById(req.params.postId);
+  post.comments.push({ user: req.body.userId, text: req.body.text });
   await post.save();
+  const updated = await Post.findById(post._id)
+    .populate('user', 'username')
+    .populate('comments.user', 'username');
+  res.json(updated);
+});
 
-  res.json(post);
+/* ---------- DELETE POST (Owner Only + Cloudinary) ---------- */
+router.delete('/:postId', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const post = await Post.findById(req.params.postId);
+
+    if (!post) return res.status(404).json({ message: 'Post not found' });
+    if (post.user.toString() !== userId)
+      return res.status(403).json({ message: 'Not allowed' });
+
+    // delete image from cloudinary
+    if (post.imagePublicId) {
+      await cloudinary.uploader.destroy(post.imagePublicId);
+    }
+
+    await Post.findByIdAndDelete(req.params.postId);
+    res.json({ message: 'Post deleted successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Delete failed' });
+  }
 });
 
 module.exports = router;
