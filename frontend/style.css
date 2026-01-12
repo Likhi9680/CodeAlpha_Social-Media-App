@@ -304,8 +304,13 @@ body.dark .post-header {
     font-size: 14px;
   }
 
+  /* 🔥 Full image on mobile */
   .post img {
-    height: 220px;
+    width: 100%;
+    height: auto;          /* Let image keep original height */
+    max-height: none;
+    object-fit: contain;  /* No cropping */
+    border-radius: 10px;
   }
 
   .post-actions {
@@ -331,7 +336,9 @@ body.dark .post-header {
   }
 
   .post img {
-    height: 260px;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
   }
 }
 
@@ -344,5 +351,8 @@ body.dark .post-header {
 
   .post img {
     height: 350px;
+    object-fit: cover;
   }
 }
+ 
+  
